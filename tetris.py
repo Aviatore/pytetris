@@ -49,7 +49,7 @@ class Game:
 
             if win32api.GetAsyncKeyState(ord('A')) and self.screen[self.brick.posYX[0]][self.brick.posYX[1] - 1] != '|':
                 do_not_move = 0
-                for y in range(self.brick.posYX[0], self.brick.posYX[0] + len(self.brick.brick[0]) + 1):
+                for y in range(self.brick.posYX[0], self.brick.posYX[0] + len(self.brick.brick) + 1):
                     if self.screen[y][self.brick.posYX[1] - 1] == '#':
                         do_not_move = 1
                         break
@@ -58,7 +58,7 @@ class Game:
             elif win32api.GetAsyncKeyState(ord('D')) and \
                     self.screen[self.brick.posYX[0]][self.brick.posYX[1] + len(self.brick.brick[0])] != '|':
                 do_not_move = 0
-                for y in range(self.brick.posYX[0], self.brick.posYX[0] + len(self.brick.brick[0]) + 1):
+                for y in range(self.brick.posYX[0], self.brick.posYX[0] + len(self.brick.brick) + 1):
                     if self.screen[y][self.brick.posYX[1] + len(self.brick.brick[0])] == '#':
                         do_not_move = 1
                         break
