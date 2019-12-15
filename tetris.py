@@ -21,7 +21,7 @@ class Game:
         for y in range(0, self.screen_height):
             for x in range(0, self.screen_width):
                 if y == self.screen_height - 1 and 0 < x < self.screen_width - 1:
-                    self.screen[y][x] = "#"
+                    self.screen[y][x] = "^"
                 elif x == 0 or x == self.screen_width - 1:
                     self.screen[y][x] = "|"
 
@@ -77,7 +77,7 @@ class Game:
 
             for y in range(len(self.brick.brick)):
                 for x in range(len(self.brick.brick[0])):
-                    if self.screen[self.brick.posYX[0] + y + 1][self.brick.posYX[1] + x] == '#' and \
+                    if self.screen[self.brick.posYX[0] + y + 1][self.brick.posYX[1] + x] in ['#', '^'] and \
                             self.brick.brick[y][x] == '#':
                         self.screen = copy.deepcopy(self.screen_2)
                         self.check()
