@@ -13,7 +13,7 @@ class Game:
 
         self.screen_height = _screen_height
         self.screen_width = _screen_width
-        self.screen = [[' ' for x in range(0, self.screen_height)] for y in range(0, self.screen_width)]
+        self.screen = [[[' ', 0] for x in range(0, self.screen_height)] for y in range(0, self.screen_width)]
         self.screen_2 = copy.deepcopy(self.screen)
 
         self.brick = Brick(self)
@@ -21,9 +21,9 @@ class Game:
         for y in range(0, self.screen_height):
             for x in range(0, self.screen_width):
                 if y == self.screen_height - 1 and 0 < x < self.screen_width - 1:
-                    self.screen[y][x] = "^"
+                    self.screen[y][x][0] = "^"
                 elif x == 0 or x == self.screen_width - 1:
-                    self.screen[y][x] = "|"
+                    self.screen[y][x][0] = "|"
 
         self.printScreen()
         self.screen_2 = copy.deepcopy(self.screen)
@@ -38,55 +38,56 @@ class Game:
         while self.run_loop:
             cont = 0
 
-            for y in range(len(self.brick.brick)):
-                for x in range(len(self.brick.brick[0])):
-                    if self.brick.brick[y][x] == '#':
-                        self.screen[self.brick.posYX[0] + y + 1][self.brick.posYX[1] + x] = ' '
+            for y in range(len(self.brick.brick[0])):
+                for x in range(len(self.brick.brick[0][0])):
+                    if self.brick.brick[0][y][x] == '#':
+                        self.screen[self.brick.posYX[0] + y + 1][self.brick.posYX[1] + x][0] = ' '
+                        self.screen[self.brick.posYX[0] + y + 1][self.brick.posYX[1] + x][1] = 0
 
             if time.time() - time_tmp >= 0.8 and not win32api.GetAsyncKeyState(ord('S')):
                 self.brick.posYX[0] += 1
                 time_tmp = time.time()
 
-            if win32api.GetAsyncKeyState(ord('A')) and self.screen[self.brick.posYX[0]][self.brick.posYX[1] - 1] != '|':
+            if win32api.GetAsyncKeyState(ord('A')) and self.screen[self.brick.posYX[0]][self.brick.posYX[1] - 1][0] != '|':
                 do_not_move = 0
-                for y in range(self.brick.posYX[0], self.brick.posYX[0] + len(self.brick.brick)):
-                    if self.screen[y + 1][self.brick.posYX[1] - 1] == '#':
+                for y in range(self.brick.posYX[0], self.brick.posYX[0] + len(self.brick.brick[0][0])):
+                    if self.screen[y + 1][self.brick.posYX[1] - 1][0] == '#':
                         do_not_move = 1
                         break
                 if do_not_move == 0:
                     self.brick.posYX[1] -= 1
             elif win32api.GetAsyncKeyState(ord('D')) and \
-                    self.screen[self.brick.posYX[0]][self.brick.posYX[1] + len(self.brick.brick[0])] != '|':
+                    self.screen[self.brick.posYX[0]][self.brick.posYX[1] + len(self.brick.brick[0][0])][0] != '|':
                 do_not_move = 0
-                for y in range(self.brick.posYX[0], self.brick.posYX[0] + len(self.brick.brick)):
-                    if self.screen[y + 1][self.brick.posYX[1] + len(self.brick.brick[0])] == '#':
+                for y in range(self.brick.posYX[0], self.brick.posYX[0] + len(self.brick.brick[0][0])):
+                    if self.screen[y + 1][self.brick.posYX[1] + len(self.brick.brick[0][0])][0] == '#':
                         do_not_move = 1
                         break
                 if do_not_move == 0:
                     self.brick.posYX[1] += 1
             elif win32api.GetAsyncKeyState(ord('W')):
-                len_prev = len(self.brick.brick[0])  # Pobiera szerokość klocka przed obrotem
+                len_prev = len(self.brick.brick[0][0])  # Pobiera szerokość klocka przed obrotem
                 self.brick.rotate()
                 # Jeżeli szerokość klocka po obrocie jest większa niż przed obrotem oraz klocek przed obrotem znajdował się w bezpośrednim otoczeniu prawej ściany,
                 # to kursor jest przesuwany o jedną pozycję w lewo
-                if len(self.brick.brick[0]) > len_prev and (
-                        self.brick.posYX[1] + len(self.brick.brick[0])) >= self.screen_width - 1:
-                    self.brick.posYX[1] -= (self.brick.posYX[1] + len(self.brick.brick[0])) - self.screen_width + 1
+                if len(self.brick.brick[0][0]) > len_prev and (
+                        self.brick.posYX[1] + len(self.brick.brick[0][0])) >= self.screen_width - 1:
+                    self.brick.posYX[1] -= (self.brick.posYX[1] + len(self.brick.brick[0][0])) - self.screen_width + 1
             elif win32api.GetAsyncKeyState(ord('S')):
                 self.brick.posYX[0] += 1
 
-            for y in range(len(self.brick.brick)):
-                for x in range(len(self.brick.brick[0])):
-                    if self.screen[self.brick.posYX[0] + y + 1][self.brick.posYX[1] + x] in ['#', '^'] and \
-                            self.brick.brick[y][x] == '#':
+            for y in range(len(self.brick.brick[0])):
+                for x in range(len(self.brick.brick[0][0])):
+                    if self.screen[self.brick.posYX[0] + y + 1][self.brick.posYX[1] + x][0] in ['#', '^'] and \
+                            self.brick.brick[0][y][x] == '#':
                         self.screen = copy.deepcopy(self.screen_2)
                         self.check()
                         self.brick.new_brick()
                         cont = 1
                         break
-                    elif self.brick.brick[y][x] != '.':
-                        self.screen[self.brick.posYX[0] + y + 1][self.brick.posYX[1] + x] = self.brick.brick[y][x]
-
+                    elif self.brick.brick[0][y][x] != '.':
+                        self.screen[self.brick.posYX[0] + y + 1][self.brick.posYX[1] + x][0] = self.brick.brick[0][y][x]
+                        self.screen[self.brick.posYX[0] + y + 1][self.brick.posYX[1] + x][1] = self.brick.brick[1]
                 else:
                     continue  # only executed if the inner loop did NOT break
 
@@ -101,15 +102,15 @@ class Game:
     def printScreen(self):
         for y in range(0, self.screen_height):
             for x in range(0, self.screen_width):
-                if self.screen[y][x] != self.screen_2[y][x]:
-                    print("\033[{};{}H{}".format(y + 1, x + 1, self.screen[y][x]))
+                if self.screen[y][x][0] != self.screen_2[y][x][0]:
+                    print("\033[{};{}H\033[{}m{}".format(y + 1, x + 1, self.screen[y][x][1], self.screen[y][x][0]))
 
     def check(self):
         sum_ = 0
         y_range_to_remove = []
         for y in range(self.brick.posYX[0], self.screen_height - 1):
             for x in range(1, self.screen_width - 1):
-                if self.screen[y][x] == '#': sum_ += 1
+                if self.screen[y][x][0] == '#': sum_ += 1
 
             if sum_ == self.screen_width - 2:
                 y_range_to_remove.append(y)
@@ -119,7 +120,7 @@ class Game:
 
             for y in y_range_to_remove:
                 for x in range(1, self.screen_width - 1):
-                    self.screen[y][x] = ' '
+                    self.screen[y][x][0] = ' '
 
             self.printScreen()
             self.screen_2 = copy.deepcopy(self.screen)
@@ -128,7 +129,7 @@ class Game:
 
             for y in range(y_range_to_remove[0] - 1, -1, -1):
                 for x in range(1, self.screen_width - 1):
-                    self.screen[y + len(y_range_to_remove)][x] = self.screen[y][x]
+                    self.screen[y + len(y_range_to_remove)][x][0] = self.screen[y][x][0]
 
             self.printScreen()
             self.screen_2 = copy.deepcopy(self.screen)
@@ -142,12 +143,12 @@ class Brick:
         self.g = Game
         self.posYX = [-1, self.g.screen_width // 2]
         self.bricks = [
-            [['.', '#'], ['.', '#'], ['#', '#']],
-            [['#', '.'], ['#', '.'], ['#', '#']],
-            [['.', '#', '.'], ['#', '#', '#']],
-            [['#', '#'], ['#', '#']],
-            [['#'], ['#'], ['#'], ['#']],
-            [['#', '.'], ['#', '#'], ['.', '#']]
+            [[['.', '#'], ['.', '#'], ['#', '#']], 0],
+            [[['#', '.'], ['#', '.'], ['#', '#']], 31],
+            [[['.', '#', '.'], ['#', '#', '#']], 32],
+            [[['#', '#'], ['#', '#']], 33],
+            [[['#'], ['#'], ['#'], ['#']], 35],
+            [[['#', '.'], ['#', '#'], ['.', '#']], 36]
         ]
         self.brick = self.bricks[random.randint(0, len(self.bricks) - 1)]
 
@@ -157,18 +158,19 @@ class Brick:
         self.rotate()
 
     def rotate(self):
-        brick_tmp = []
+        brick_tmp = [ [], [] ]
         # Tworzy nowy klocek o szerokości i wysokości równym odpowiednio wysokości oraz szerokości danego klocka
-        for y in range(len(self.brick[0])):
+        for y in range(len(self.brick[0][0])):
             new = []
-            for x in range(len(self.brick)):
+            for x in range(len(self.brick[0])):
                 new.append('.')
-            brick_tmp.append(new)
+            brick_tmp[0].append(new)
 
-        for x in range(len(self.brick)):
-            for y in range(len(self.brick[0])):
-                brick_tmp[y][len(self.brick) - x - 1] = self.brick[x][y]
-
+        for x in range(len(self.brick[0])):
+            for y in range(len(self.brick[0][0])):
+                brick_tmp[0][y][len(self.brick[0]) - x - 1] = self.brick[0][x][y]
+        
+        brick_tmp[1] = self.brick[1]
         self.brick = copy.deepcopy(brick_tmp)
 
 
