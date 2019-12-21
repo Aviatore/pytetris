@@ -17,6 +17,7 @@ class Game:
         self.screen_2 = copy.deepcopy(self.screen)
 
         self.brick = Brick(self)
+        self.brick.new_brick()
 
         for y in range(0, self.screen_height):
             for x in range(0, self.screen_width):
@@ -180,7 +181,10 @@ class Brick:
         self.brick_index = self.next_brick_index
         self.brick = self.bricks[self.brick_index]
         self.next_brick_index = random.randint(0, len(self.bricks) - 1)
-        self.rotate()
+
+        rotate_number = random.randint(0, 4)
+        for i in range(0, rotate_number):
+            self.rotate()
 
     def rotate(self):
         brick_tmp = [ [], [] ]
