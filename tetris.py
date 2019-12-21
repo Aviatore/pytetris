@@ -13,7 +13,7 @@ class Game:
 
         self.screen_height = _screen_height
         self.screen_width = _screen_width
-        self.screen = [[[' ', 0] for x in range(0, self.screen_height)] for y in range(0, self.screen_width)]
+        self.screen = [[[' ', 0] for x in range(0, self.screen_width + 15)] for y in range(0, self.screen_height)]
         self.screen_2 = copy.deepcopy(self.screen)
 
         self.brick = Brick(self)
@@ -21,14 +21,32 @@ class Game:
         for y in range(0, self.screen_height):
             for x in range(0, self.screen_width):
                 if y == self.screen_height - 1 and 0 < x < self.screen_width - 1:
-                    self.screen[y][x][0] = "^"
+                    self.screen[y][x][0] = "="
                 elif x == 0 or x == self.screen_width - 1:
                     self.screen[y][x][0] = "|"
+
+
+        self.input_text([3, self.screen_width + 2], "next")
 
         self.printScreen()
         self.screen_2 = copy.deepcopy(self.screen)
 
         self.run_loop = True
+
+    def input_text(self, pos, text):
+        for x in range(0, len(text)):
+            self.screen[pos[0]][pos[1] + x][0] = text[x]
+#            self.screen[pos[0]][pos[1] + x][1] = 0
+
+    def print_next_brick(self):
+        for y in range(0, 4):
+            for x in range(0, 4):
+                self.screen[1 + y][self.screen_width + 8 + x][0] = ' '
+
+        for y in range(len(self.brick.bricks[self.brick.next_brick_index][0])):
+            for x in range(len(self.brick.bricks[self.brick.next_brick_index][0][0])):
+                self.screen[1 + y][self.screen_width + 8 + x][0] = self.brick.bricks[self.brick.next_brick_index][0][y][
+                    x]
 
     def loop(self):
         self.brick.new_brick()
@@ -78,11 +96,12 @@ class Game:
 
             for y in range(len(self.brick.brick[0])):
                 for x in range(len(self.brick.brick[0][0])):
-                    if self.screen[self.brick.posYX[0] + y + 1][self.brick.posYX[1] + x][0] in ['#', '^'] and \
+                    if self.screen[self.brick.posYX[0] + y + 1][self.brick.posYX[1] + x][0] in ['#', '='] and \
                             self.brick.brick[0][y][x] == '#':
                         self.screen = copy.deepcopy(self.screen_2)
                         self.check()
                         self.brick.new_brick()
+                        self.print_next_brick()
                         cont = 1
                         break
                     elif self.brick.brick[0][y][x] != '.':
@@ -101,9 +120,11 @@ class Game:
 
     def printScreen(self):
         for y in range(0, self.screen_height):
-            for x in range(0, self.screen_width):
+            for x in range(0, self.screen_width + 15):
                 if self.screen[y][x][0] != self.screen_2[y][x][0]:
+       #             print(len(self.screen[y][x]))
                     print("\033[{};{}H\033[{}m{}".format(y + 1, x + 1, self.screen[y][x][1], self.screen[y][x][0]))
+ #                  print("\033[{};{}H\033[{}m{}".format(y + 1, x + 1, 0, self.screen[y][x][0]))
 
     def check(self):
         sum_ = 0
@@ -140,21 +161,25 @@ class Game:
 class Brick:
     def __init__(self, Game):
         random.seed(time.time())
+        self.brick_index = 0
+        self.next_brick_index = 0
         self.g = Game
         self.posYX = [-1, self.g.screen_width // 2]
         self.bricks = [
-            [[['.', '#'], ['.', '#'], ['#', '#']], 0],
-            [[['#', '.'], ['#', '.'], ['#', '#']], 31],
-            [[['.', '#', '.'], ['#', '#', '#']], 32],
+            [[[' ', '#'], [' ', '#'], ['#', '#']], 0],
+            [[['#', ' '], ['#', ' '], ['#', '#']], 31],
+            [[[' ', '#', ' '], ['#', '#', '#']], 32],
             [[['#', '#'], ['#', '#']], 33],
             [[['#'], ['#'], ['#'], ['#']], 35],
-            [[['#', '.'], ['#', '#'], ['.', '#']], 36]
+            [[['#', ' '], ['#', '#'], [' ', '#']], 36]
         ]
         self.brick = self.bricks[random.randint(0, len(self.bricks) - 1)]
 
     def new_brick(self):
         self.posYX = [-1, self.g.screen_width // 2]
-        self.brick = self.bricks[random.randint(0, len(self.bricks) - 1)]
+        self.brick_index = self.next_brick_index
+        self.brick = self.bricks[self.brick_index]
+        self.next_brick_index = random.randint(0, len(self.bricks) - 1)
         self.rotate()
 
     def rotate(self):
@@ -174,5 +199,5 @@ class Brick:
         self.brick = copy.deepcopy(brick_tmp)
 
 
-game = Game(20, 20)
+game = Game(20, 15)
 game.loop()
