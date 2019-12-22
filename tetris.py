@@ -289,6 +289,7 @@ Speed {} sec\033[0m".format(self.bricksNo_total, lvl, self.speed))
             for y in y_range_to_remove:
                 for x in range(1, self.screen_width - 1):
                     self.screen[y][x][0] = ' '
+                    self.screen[y][x][1] = 0
 
             self.printScreen()
             self.screen_2 = copy.deepcopy(self.screen)
@@ -298,6 +299,7 @@ Speed {} sec\033[0m".format(self.bricksNo_total, lvl, self.speed))
             for y in range(y_range_to_remove[0] - 1, -1, -1):
                 for x in range(1, self.screen_width - 1):
                     self.screen[y + len(y_range_to_remove)][x][0] = self.screen[y][x][0]
+                    self.screen[y + len(y_range_to_remove)][x][1] = self.screen[y][x][1]
 
             self.score += len(y_range_to_remove) * ((self.combo + 1) * 10)
             self.combo += 1
