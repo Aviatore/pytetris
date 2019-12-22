@@ -4,6 +4,7 @@ import time
 import colorama
 import win32api
 import random
+import sqlite3
 
 
 class Game:
@@ -13,13 +14,17 @@ class Game:
 
         self.screen_height = _screen_height
         self.screen_width = _screen_width
-        self.screen = [[[' ', 0] for x in range(0, self.screen_width + 15)] for y in range(0, self.screen_height)]
+        self.infoScreenWidth = 30
+        self.screen = [[[' ', 0] for x in range(0, self.screen_width + self.infoScreenWidth)] for y in range(0, self.screen_height)]
         self.screen_2 = copy.deepcopy(self.screen)
+        self.name = 'Wojtek'
         self.score = 0
         self.combo = 0
         self.bricksNo = 0
         self.bricksNo_total = 0
         self.speed = 0.8
+        self.gameOverCheck = 0
+
 
         self.brick = Brick(self)
         self.brick.new_brick()
@@ -42,6 +47,81 @@ class Game:
         self.screen_2 = copy.deepcopy(self.screen)
 
         self.run_loop = True
+
+    def gameOver(self):
+        self.input_text([11, self.screen_width + 2], "Game over", 31)
+
+        conn = sqlite3.connect("score.db")
+        c = conn.cursor()
+        scores = {
+            'name': [],
+            'score': []
+        }
+
+        try:
+            c.execute("SELECT * FROM scores")
+        except sqlite3.Error as e:
+            try:
+                c.execute("CREATE TABLE scores (\
+                       name text,\
+                       score int)")
+                conn.commit()
+            except sqlite3.Error as e:
+                print("\033[23;1HSqlite3 error 2: {}".format(e))
+                conn.close()
+                exit(1)
+
+        try:
+            c.execute("SELECT * FROM scores")
+        except sqlite3.Error as e:
+            print("\033[23;1HSqlite3 error 3: {}".format(e))
+            conn.close()
+            exit(1)
+
+        for row in c.fetchall():
+            scores['name'].append(row[0])
+            scores['score'].append(row[1])
+
+        try:
+            c.execute("INSERT INTO scores VALUES (?, ?)", (self.name, self.score))
+            conn.commit()
+        except sqlite3.Error as e:
+            print("\033[23;1HSqlite3 error 4: {}".format(e))
+            conn.close()
+            exit(1)
+
+        conn.close()
+
+        scores['name'].append(self.name)
+        scores['score'].append(self.score)
+        sorted_indexes = []
+        for i in sorted(enumerate(scores['score']), key=lambda x: x[1], reverse=True):
+            sorted_indexes.append(i[0])
+
+        for y in range(15):
+            for x in range(15):
+                self.screen[y][self.screen_width + 2 + x][0] = ' '
+                self.screen[y][self.screen_width + 2 + x][1] = 0
+        self.printScreen()
+
+        print("\033[2;{}HHigh score:".format(self.screen_width + 2))
+
+        if len(sorted_indexes) > 5:
+            high_score_to_print = 5
+        else:
+            high_score_to_print = len(sorted_indexes)
+
+        for i in range(high_score_to_print):
+            print("\033[{};{}H{}. {} {}".format(4 + (i * 2),\
+                                                 self.screen_width + 2,\
+                                                 i + 1,\
+                                                 scores['name'][sorted_indexes[i]],\
+                                                 scores['score'][sorted_indexes[i]]))
+
+#        self.input_text([2, self.screen_width + 2], "High score:")
+
+        print("\033[26;1H")
+        exit(1)
 
     def set_speed(self):
         avail_speeds = {
@@ -71,10 +151,10 @@ class Game:
 Level: {}\n\
 Speed {} sec\033[0m".format(self.bricksNo_total, lvl, self.speed))
 
-    def input_text(self, pos, text):
+    def input_text(self, pos, text, col = 0):
         for x in range(0, len(text)):
             self.screen[pos[0]][pos[1] + x][0] = text[x]
-#            self.screen[pos[0]][pos[1] + x][1] = 0
+            self.screen[pos[0]][pos[1] + x][1] = col
 
     def print_combo(self):
         msg = 'COMBO ' + str(self.combo) + 'x'
@@ -187,7 +267,7 @@ Speed {} sec\033[0m".format(self.bricksNo_total, lvl, self.speed))
 
     def printScreen(self):
         for y in range(0, self.screen_height):
-            for x in range(0, self.screen_width + 15):
+            for x in range(0, self.screen_width + self.infoScreenWidth):
                 if self.screen[y][x][0] != self.screen_2[y][x][0] or self.screen[y][x][1] != self.screen_2[y][x][1]:
        #             print(len(self.screen[y][x]))
                     print("\033[{};{}H\033[{}m{}".format(y + 1, x + 1, self.screen[y][x][1], self.screen[y][x][0]))
@@ -262,6 +342,12 @@ class Brick:
         self.next_brick = copy.deepcopy(self.bricks[random.randint(0, len(self.bricks) - 1)])
 
 #        self.next_brick_index = random.randint(0, len(self.bricks) - 1)
+
+        for y in range(len(self.g.brick.brick[0])):
+            for x in range(len(self.g.brick.brick[0][0])):
+                if self.g.screen[self.g.brick.posYX[0] + y + 1][self.g.brick.posYX[1] + x][0] in ['#', '='] and \
+                        self.g.brick.brick[0][y][x] == '#':
+                    self.g.gameOver()
 
         for i in range(0, random.randint(0, 4)):
             self.rotate('next')
