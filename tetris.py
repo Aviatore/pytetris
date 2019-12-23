@@ -6,12 +6,15 @@ import win32api
 import random
 import sqlite3
 import msvcrt
+import signal
 
 
 class Game:
     def __init__(self, _screen_height, _screen_width):
         colorama.init()
         os.system('cls')
+
+        signal.signal(signal.SIGINT, self.signal_interruption_handler)
 
         self.screen_height = _screen_height
         self.screen_width = _screen_width
@@ -37,7 +40,6 @@ class Game:
                 elif x == 0 or x == self.screen_width - 1:
                     self.screen[y][x][0] = "|"
 
-
         self.input_text([2, self.screen_width + 2], "next")
         self.input_text([8, self.screen_width + 2], "score:")
         self.print_next_brick()
@@ -49,14 +51,25 @@ class Game:
 
         self.run_loop = True
 
+    @staticmethod
+    def keyboard_flush():
+        # Flush the keyboard buffer
+        while msvcrt.kbhit():
+            msvcrt.getch()
+
+    @staticmethod
+    def signal_interruption_handler(signal, frame):
+        print("\033[27;1H\033[0mKeyboard interrupt has been caught. Bye!")
+
+        Game.keyboard_flush()
+        exit(0)
+
     def get_user_data(self):
         self.input_text([15, self.screen_width + 2], "Your name: ", 0)
         self.printScreen()
         self.screen_2 = copy.deepcopy(self.screen)
 
-        # Flush the keyboard buffer
-        while msvcrt.kbhit():
-            msvcrt.getch()
+        Game.keyboard_flush()
 
         print("\033[16;{}H".format(self.screen_width + 2 + len("Your name:  ")), end="")
         self.name = input("")
@@ -86,6 +99,7 @@ class Game:
             except sqlite3.Error as e:
                 print("\033[23;1HSqlite3 error 2: {}".format(e))
                 conn.close()
+                Game.keyboard_flush()
                 exit(1)
 
         try:
@@ -93,6 +107,7 @@ class Game:
         except sqlite3.Error as e:
             print("\033[23;1HSqlite3 error 3: {}".format(e))
             conn.close()
+            Game.keyboard_flush()
             exit(1)
 
         for row in c.fetchall():
@@ -105,6 +120,7 @@ class Game:
         except sqlite3.Error as e:
             print("\033[23;1HSqlite3 error 4: {}".format(e))
             conn.close()
+            Game.keyboard_flush()
             exit(1)
 
         conn.close()
@@ -181,6 +197,7 @@ class Game:
                     self.prepare_new_game()
                 else:
                     print("\033[26;1H")
+                    Game.keyboard_flush()
                     exit(1)
             self.printScreen()
             self.screen_2 = copy.deepcopy(self.screen)
