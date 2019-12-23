@@ -5,6 +5,7 @@ import colorama
 import win32api
 import random
 import sqlite3
+import msvcrt
 
 
 class Game:
@@ -48,8 +49,24 @@ class Game:
 
         self.run_loop = True
 
+    def get_user_data(self):
+        self.input_text([15, self.screen_width + 2], "Your name: ", 0)
+        self.printScreen()
+        self.screen_2 = copy.deepcopy(self.screen)
+
+        # Flush the keyboard buffer
+        while msvcrt.kbhit():
+            msvcrt.getch()
+
+        print("\033[16;{}H".format(self.screen_width + 2 + len("Your name:  ")), end="")
+        self.name = input("")
+        print("\033[16;{}H{}".format(self.screen_width + 2 + len("Your name:  "), ' ' * len(self.name)), end="")
+
     def gameOver(self):
         self.input_text([11, self.screen_width + 2], "Game over", 31)
+        self.printScreen()
+        self.screen_2 = copy.deepcopy(self.screen)
+        self.get_user_data()
 
         conn = sqlite3.connect("score.db")
         c = conn.cursor()
