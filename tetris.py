@@ -98,13 +98,15 @@ class Game:
         for i in sorted(enumerate(scores['score']), key=lambda x: x[1], reverse=True):
             sorted_indexes.append(i[0])
 
-        for y in range(15):
-            for x in range(15):
-                self.screen[y][self.screen_width + 2 + x][0] = ' '
-                self.screen[y][self.screen_width + 2 + x][1] = 0
+        for y in range(self.screen_height):
+            for x in range(self.infoScreenWidth):
+                self.screen[y][self.screen_width + x][0] = ' '
+                self.screen[y][self.screen_width + x][1] = 0
         self.printScreen()
+        self.screen_2 = copy.deepcopy(self.screen)
 
-        print("\033[2;{}HHigh score:".format(self.screen_width + 2))
+        self.input_text([2, self.screen_width + 2], "High score:", 0)
+#        print("\033[2;{}HHigh score:".format(self.screen_width + 2))
 
         if len(sorted_indexes) > 5:
             high_score_to_print = 5
@@ -112,16 +114,101 @@ class Game:
             high_score_to_print = len(sorted_indexes)
 
         for i in range(high_score_to_print):
-            print("\033[{};{}H{}. {} {}".format(4 + (i * 2),\
-                                                 self.screen_width + 2,\
-                                                 i + 1,\
-                                                 scores['name'][sorted_indexes[i]],\
-                                                 scores['score'][sorted_indexes[i]]))
+            msg = str(i + 1) + '. ' + scores['name'][sorted_indexes[i]] + ' ' + str(scores['score'][sorted_indexes[i]])
+            self.input_text([4 + (i * 2), self.screen_width + 2], msg, 0)
+        self.printScreen()
+        self.screen_2 = copy.deepcopy(self.screen)
+#        for i in range(high_score_to_print):
+#            print("\033[{};{}H\033[0m{}. {} {}".format(4 + (i * 2),\
+#                                                 self.screen_width + 2,\
+#                                                 i + 1,\
+#                                                 scores['name'][sorted_indexes[i]],\
+#                                                 scores['score'][sorted_indexes[i]]))
 
-#        self.input_text([2, self.screen_width + 2], "High score:")
 
-        print("\033[26;1H")
-        exit(1)
+        self.menu()
+#        print("\033[26;1H")
+#        exit(1)
+
+    def menu(self):
+        menu_items_selection = {
+            'new_game': 32,
+            'quit': 0
+        }
+
+        self.input_text([17, self.screen_width + 2], "New Game", menu_items_selection['new_game'])
+#        print("\033[18;{}H\033[{}mNew Game\033[0m".format(self.screen_width + 2, menu_items_selection['new_game']))
+        self.input_text([19, self.screen_width + 2], "Quit", menu_items_selection['quit'])
+#        print("\033[20;{}H\033[{}mQuit\033[0m".format(self.screen_width + 2, menu_items_selection['quit']))
+        self.printScreen()
+        self.screen_2 = copy.deepcopy(self.screen)
+
+        while True:
+            if win32api.GetAsyncKeyState(ord('W')) and menu_items_selection['new_game'] == 0:
+                menu_items_selection['new_game'] = 32
+                menu_items_selection['quit'] = 0
+                self.input_text([17, self.screen_width + 2], "New Game", menu_items_selection['new_game'])
+#                print("\033[18;{}H\033[{}mNew Game\033[0m".format(self.screen_width + 2, menu_items_selection['new_game']))
+                self.input_text([19, self.screen_width + 2], "Quit", menu_items_selection['quit'])
+#                print("\033[20;{}H\033[{}mQuit\033[0m".format(self.screen_width + 2, menu_items_selection['quit']))
+            elif win32api.GetAsyncKeyState(ord('S')) and menu_items_selection['quit'] == 0:
+                menu_items_selection['quit'] = 32
+                menu_items_selection['new_game'] = 0
+                self.input_text([17, self.screen_width + 2], "New Game", menu_items_selection['new_game'])
+#                print("\033[18;{}H\033[{}mNew Game\033[0m".format(self.screen_width + 2,
+#                      menu_items_selection['new_game']))
+                self.input_text([19, self.screen_width + 2], "Quit", menu_items_selection['quit'])
+#                print("\033[20;{}H\033[{}mQuit\033[0m".format(self.screen_width + 2, menu_items_selection['quit']))
+            elif win32api.GetAsyncKeyState(ord('A')) or win32api.GetAsyncKeyState(ord('D')):
+                if menu_items_selection['new_game'] > 0:
+                    self.prepare_new_game()
+                else:
+                    print("\033[26;1H")
+                    exit(1)
+            self.printScreen()
+            self.screen_2 = copy.deepcopy(self.screen)
+            time.sleep(0.1)
+
+    def prepare_new_game(self):
+        # Clear the 'menu' screen
+        for y in range(self.screen_height):
+            for x in range(self.infoScreenWidth):
+                self.screen[y][self.screen_width + x][0] = ' '
+                self.screen[y][self.screen_width + x][1] = 0
+        self.printScreen()
+        self.screen_2 = copy.deepcopy(self.screen)
+
+        for y in range(self.screen_height - 2, -1, -1):
+            for x in range(1, self.screen_width - 1):
+                if self.screen[y][x][0] != '#':
+                    self.screen[y][x][0] = '#'
+                    self.screen[y][x][1] = 0
+            self.printScreen()
+            time.sleep(0.005)
+        self.screen_2 = copy.deepcopy(self.screen)
+
+        for y in range(self.screen_height - 1):
+            for x in range(1, self.screen_width - 1):
+                self.screen[y][x][0] = ' '
+                self.screen[y][x][1] = 0
+            self.printScreen()
+            time.sleep(0.005)
+        self.screen_2 = copy.deepcopy(self.screen)
+
+        self.input_text([2, self.screen_width + 2], "next")
+        self.input_text([8, self.screen_width + 2], "score:")
+        self.brick.new_brick()
+        self.print_next_brick()
+        self.print_score()
+        self.set_speed()
+        self.bricksNo = 0
+        self.bricksNo_total = 0
+        self.printScreen()
+        self.screen_2 = copy.deepcopy(self.screen)
+
+        self.run_loop = True
+
+        self.loop()
 
     def set_speed(self):
         avail_speeds = {
@@ -219,7 +306,9 @@ Speed {} sec\033[0m".format(self.bricksNo_total, lvl, self.speed))
                     self.screen[self.brick.posYX[0]][self.brick.posYX[1] + len(self.brick.brick[0][0])][0] != '|':
                 do_not_move = 0
                 for y in range(len(self.brick.brick[0])):
-                    if self.brick.brick[0][y][0] == '#' and self.screen[self.brick.posYX[0] + y + 1][self.brick.posYX[1] + len(self.brick.brick[0][0])][0] == '#':
+                    if self.brick.brick[0][y][len(self.brick.brick[0][0]) - 1] == '#' and \
+                            self.screen[self.brick.posYX[0] + y + 1][self.brick.posYX[1] +
+                                                                     len(self.brick.brick[0][0])][0] == '#':
                         do_not_move = 1
                         break
 
@@ -265,13 +354,18 @@ Speed {} sec\033[0m".format(self.bricksNo_total, lvl, self.speed))
 
         self.brick.new_brick()
 
-    def printScreen(self):
-        for y in range(0, self.screen_height):
-            for x in range(0, self.screen_width + self.infoScreenWidth):
-                if self.screen[y][x][0] != self.screen_2[y][x][0] or self.screen[y][x][1] != self.screen_2[y][x][1]:
-       #             print(len(self.screen[y][x]))
+    def printScreen(self, force=False):
+        if force:
+            for y in range(0, self.screen_height):
+                for x in range(0, self.screen_width + self.infoScreenWidth):
                     print("\033[{};{}H\033[{}m{}".format(y + 1, x + 1, self.screen[y][x][1], self.screen[y][x][0]))
- #                  print("\033[{};{}H\033[{}m{}".format(y + 1, x + 1, 0, self.screen[y][x][0]))
+        else:
+            for y in range(0, self.screen_height):
+                for x in range(0, self.screen_width + self.infoScreenWidth):
+                    if self.screen[y][x][0] != self.screen_2[y][x][0] or self.screen[y][x][1] != self.screen_2[y][x][1]:
+           #             print(len(self.screen[y][x]))
+                        print("\033[{};{}H\033[{}m{}".format(y + 1, x + 1, self.screen[y][x][1], self.screen[y][x][0]))
+     #                  print("\033[{};{}H\033[{}m{}".format(y + 1, x + 1, 0, self.screen[y][x][0]))
 
     def check(self):
         sum_ = 0
@@ -294,7 +388,7 @@ Speed {} sec\033[0m".format(self.bricksNo_total, lvl, self.speed))
             self.printScreen()
             self.screen_2 = copy.deepcopy(self.screen)
 
-            time.sleep(1)
+            time.sleep(0.3)
 
             for y in range(y_range_to_remove[0] - 1, -1, -1):
                 for x in range(1, self.screen_width - 1):
@@ -309,7 +403,7 @@ Speed {} sec\033[0m".format(self.bricksNo_total, lvl, self.speed))
             self.printScreen()
             self.screen_2 = copy.deepcopy(self.screen)
 
-            time.sleep(1)
+            time.sleep(0.3)
         else:
             self.combo = 0
             self.clear_combo()
