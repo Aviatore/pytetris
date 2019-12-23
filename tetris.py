@@ -28,6 +28,8 @@ class Game:
         self.bricksNo_total = 0
         self.speed = 0.8
         self.gameOverCheck = 0
+        self.lvl = 0
+        self.lvl_tmp = 0
 
 
         self.brick = Brick(self)
@@ -237,6 +239,7 @@ class Game:
         self.set_speed()
         self.bricksNo = 0
         self.bricksNo_total = 0
+        self.lvl = 0
         self.printScreen()
         self.screen_2 = copy.deepcopy(self.screen)
 
@@ -256,21 +259,25 @@ class Game:
             140: 0.3,
             160: 0.2,
         }
-        isSet = False
-        lvl = 0
-        for i in sorted(avail_speeds.keys()):
-            if self.bricksNo >= i:
-                self.speed = avail_speeds[i]
-                isSet = True
-                lvl += 1
 
-        if not isSet:
-            self.bricksNo = 0
-            self.speed = 0.8
+        lvl = 0
+
+        for i in sorted(avail_speeds.keys()):
+            if i <= self.bricksNo < 180:
+                self.speed = avail_speeds[i]
+                lvl += 1
+            elif self.bricksNo >= 180:
+                self.bricksNo = 0
+                self.speed = 0.8
+                lvl = 0
+
+        if self.lvl_tmp != lvl:
+            self.lvl_tmp = lvl
+            self.lvl += 1
 
         print("\033[23;1H\r\033[0K\033[33mBricks No: {}\n\
 Level: {}\n\
-Speed {} sec\033[0m".format(self.bricksNo_total, lvl, self.speed))
+Speed {} sec\033[0m".format(self.bricksNo_total, self.lvl, self.speed))
 
     def input_text(self, pos, text, col = 0):
         for x in range(0, len(text)):
