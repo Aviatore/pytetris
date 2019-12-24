@@ -23,6 +23,7 @@ class Game:
         self.screen_2 = copy.deepcopy(self.screen)
         self.name = 'Wojtek'
         self.score = 0
+        self.highScore = 0
         self.combo = 0
         self.bricksNo = 0
         self.bricksNo_total = 0
@@ -30,6 +31,10 @@ class Game:
         self.gameOverCheck = 0
         self.lvl = 0
         self.lvl_tmp = 0
+        self.scores = {
+            'name': [],
+            'score': []
+        }
 
 
         self.brick = Brick(self)
@@ -47,6 +52,8 @@ class Game:
         self.print_next_brick()
         self.print_score()
         self.set_speed()
+
+        self.getHighScores()
 
         self.printScreen()
         self.screen_2 = copy.deepcopy(self.screen)
@@ -77,19 +84,9 @@ class Game:
         self.name = input("")
         print("\033[16;{}H{}".format(self.screen_width + 2 + len("Your name:  "), ' ' * len(self.name)), end="")
 
-    def gameOver(self):
-        self.input_text([11, self.screen_width + 2], "Game over", 31)
-        self.printScreen()
-        self.screen_2 = copy.deepcopy(self.screen)
-        self.get_user_data()
-
+    def getHighScores(self):
         conn = sqlite3.connect("score.db")
         c = conn.cursor()
-        scores = {
-            'name': [],
-            'score': []
-        }
-
         try:
             c.execute("SELECT * FROM scores")
         except sqlite3.Error as e:
@@ -113,8 +110,24 @@ class Game:
             exit(1)
 
         for row in c.fetchall():
-            scores['name'].append(row[0])
-            scores['score'].append(row[1])
+            self.scores['name'].append(row[0])
+            self.scores['score'].append(row[1])
+
+        conn.close()
+
+        sorted_indexes = []
+        for i in sorted(enumerate(self.scores['score']), key=lambda x: x[1], reverse=True):
+            sorted_indexes.append(i[0])
+        self.highScore = self.scores['score'][sorted_indexes[0]]
+
+    def gameOver(self):
+        self.input_text([11, self.screen_width + 2], "Game over", 31)
+        self.printScreen()
+        self.screen_2 = copy.deepcopy(self.screen)
+        self.get_user_data()
+
+        conn = sqlite3.connect("score.db")
+        c = conn.cursor()
 
         try:
             c.execute("INSERT INTO scores VALUES (?, ?)", (self.name, self.score))
@@ -127,10 +140,10 @@ class Game:
 
         conn.close()
 
-        scores['name'].append(self.name)
-        scores['score'].append(self.score)
+        self.scores['name'].append(self.name)
+        self.scores['score'].append(self.score)
         sorted_indexes = []
-        for i in sorted(enumerate(scores['score']), key=lambda x: x[1], reverse=True):
+        for i in sorted(enumerate(self.scores['score']), key=lambda x: x[1], reverse=True):
             sorted_indexes.append(i[0])
 
         for y in range(self.screen_height):
@@ -149,7 +162,7 @@ class Game:
             high_score_to_print = len(sorted_indexes)
 
         for i in range(high_score_to_print):
-            msg = str(i + 1) + '. ' + scores['name'][sorted_indexes[i]] + ' ' + str(scores['score'][sorted_indexes[i]])
+            msg = str(i + 1) + '. ' + self.scores['name'][sorted_indexes[i]] + ' ' + str(self.scores['score'][sorted_indexes[i]])
             self.input_text([4 + (i * 2), self.screen_width + 2], msg, 0)
         self.printScreen()
         self.screen_2 = copy.deepcopy(self.screen)
@@ -166,6 +179,7 @@ class Game:
 #        exit(1)
 
     def menu(self):
+        self.keyboard_flush()
         menu_items_selection = {
             'new_game': 32,
             'quit': 0
@@ -240,6 +254,10 @@ class Game:
         self.bricksNo = 0
         self.bricksNo_total = 0
         self.lvl = 0
+        self.scores = {
+            'name': [],
+            'score': []
+        }
         self.printScreen()
         self.screen_2 = copy.deepcopy(self.screen)
 
@@ -389,6 +407,10 @@ Speed {} sec\033[0m".format(self.bricksNo_total, self.lvl, self.speed))
 
             if cont == 1: continue
 
+            # Compares the current score with the highest score in the database
+            if self.score > 0:
+                self.input_text([11, self.screen_width + 2], "Best score!", 32)
+
             self.printScreen()
             self.screen_2 = copy.deepcopy(self.screen)
             time.sleep(0.1)
@@ -429,7 +451,7 @@ Speed {} sec\033[0m".format(self.bricksNo_total, self.lvl, self.speed))
             self.printScreen()
             self.screen_2 = copy.deepcopy(self.screen)
 
-            time.sleep(0.3)
+            time.sleep(0.5)
 
             for y in range(y_range_to_remove[0] - 1, -1, -1):
                 for x in range(1, self.screen_width - 1):
@@ -444,7 +466,7 @@ Speed {} sec\033[0m".format(self.bricksNo_total, self.lvl, self.speed))
             self.printScreen()
             self.screen_2 = copy.deepcopy(self.screen)
 
-            time.sleep(0.3)
+            time.sleep(0.5)
         else:
             self.combo = 0
             self.clear_combo()
