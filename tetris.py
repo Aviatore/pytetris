@@ -11,9 +11,10 @@ import signal
 
 class Game:
     def __init__(self, _screen_height, _screen_width):
+        os.system('mode con: cols=60 lines=30')
         colorama.init()
         os.system('cls')
-
+#        win32api.ShowCursor(False)
         signal.signal(signal.SIGINT, self.signal_interruption_handler)
 
         self.screen_height = _screen_height
@@ -21,7 +22,7 @@ class Game:
         self.infoScreenWidth = 30
         self.screen = [[[' ', 0] for x in range(0, self.screen_width + self.infoScreenWidth)] for y in range(0, self.screen_height)]
         self.screen_2 = copy.deepcopy(self.screen)
-        self.name = 'Wojtek'
+        self.name = ''
         self.score = 0
         self.highScore = 0
         self.combo = 0
@@ -44,11 +45,13 @@ class Game:
             for x in range(0, self.screen_width):
                 if y == self.screen_height - 1 and 0 < x < self.screen_width - 1:
                     self.screen[y][x][0] = "="
+                    self.screen[y][x][1] = 0
                 elif x == 0 or x == self.screen_width - 1:
                     self.screen[y][x][0] = "|"
+                    self.screen[y][x][1] = 0
 
-        self.input_text([2, self.screen_width + 2], "next")
-        self.input_text([8, self.screen_width + 2], "score:")
+        self.input_text([2, self.screen_width + 2], "next", 0)
+        self.input_text([8, self.screen_width + 2], "score:", 0)
         self.print_next_brick()
         self.print_score()
         self.set_speed()
@@ -118,9 +121,11 @@ class Game:
         sorted_indexes = []
         for i in sorted(enumerate(self.scores['score']), key=lambda x: x[1], reverse=True):
             sorted_indexes.append(i[0])
-        self.highScore = self.scores['score'][sorted_indexes[0]]
+        if len(sorted_indexes) > 0:
+            self.highScore = self.scores['score'][sorted_indexes[0]]
 
     def gameOver(self):
+        self.input_text([11, self.screen_width + 2], ' ' * len("Best score!"), 0)
         self.input_text([11, self.screen_width + 2], "Game over", 31)
         self.printScreen()
         self.screen_2 = copy.deepcopy(self.screen)
@@ -245,8 +250,8 @@ class Game:
             time.sleep(0.005)
         self.screen_2 = copy.deepcopy(self.screen)
 
-        self.input_text([2, self.screen_width + 2], "next")
-        self.input_text([8, self.screen_width + 2], "score:")
+        self.input_text([2, self.screen_width + 2], "next", 0)
+        self.input_text([8, self.screen_width + 2], "score:", 0)
         self.brick.new_brick()
         self.print_next_brick()
         self.print_score()
